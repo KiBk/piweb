@@ -1,0 +1,87 @@
+version: "3" # 3 is only because of PiHole
+
+services:
+    portainer:
+        image: portainer/portainer
+        container_name: portainer
+        command: -H unix:///var/run/docker.sock
+        ports:
+        - 9000:9000
+        - 8000:8000
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - ${PIWEB_PATH}/portainer/data:/data
+        restart: always
+
+    pihole: # More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
+        container_name: pihole
+        image: pihole/pihole:latest
+        ports:
+        - 53:53/tcp
+        - 53:53/udp
+        - 67:67/udp
+        - 80:80/tcp
+        - 443:443/tcp
+        environment:
+        - TZ=Europe/Oslo
+        - WEBPASSWORD=${PIHOLE_WEBPASSWORD}
+        - ServerIP=${PIHOLE_ServerIP}
+        - IPv6=false
+        volumes: # Volumes store your data between container upgrades
+        - ${PIWEB_PATH}/pihole/config:/etc/pihole/
+        - ${PIWEB_PATH}/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/
+        dns:
+        - 127.0.0.1
+        - 1.1.1.1
+        cap_add: # Recommended but not required (DHCP needs NET_ADMIN)
+        - NET_ADMIN
+        restart: always
+
+    unifi-controller:
+        image: linuxserver/unifi-controller
+        container_name: unifi-controller
+        environment:
+        - PUID=1000
+        - PGID=1000
+        - MEM_LIMIT=512M #optional
+        volumes:
+        - ${PIWEB_PATH}/unifi-controller/config:/config
+        ports:
+        - 3478:3478/udp
+        - 10001:10001/udp
+        - 8080:8080
+        - 8081:8081
+        - 8443:8443
+        - 8843:8843
+        - 8880:8880
+        - 6789:6789
+        restart: always
+
+    duckdns: # Free dynamic DNS
+        image: linuxserver/duckdns
+        container_name: duckdns
+        dns: 8.8.8.8 # Because PIhole is running on the same RPI
+        environment:
+        - PUID=1000 
+        - PGID=1000 
+        - TZ=Europe/Oslo
+        - SUBDOMAINS=kibk
+        - TOKEN=${DUCKDNS_TOKEN}
+        - LOG_FILE=false #optional
+        volumes:
+        - ${PIWEB_PATH}/duckdns/config:/config #optional
+        restart: unless-stopped
+
+    ouroboros: # Automatically update your containers
+        image: pyouroboros/ouroboros
+        container_name: ouroboros
+        environment:
+        - CLEANUP=true
+        - INTERVAL=300
+        - LOG_LEVEL=info
+        - SELF_UPDATE=true
+        - IGNORE=mongo influxdb postgres mariadb # Doesn't matter
+        - TZ=Europe/Oslo
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        restart: always

@@ -1,0 +1,7 @@
+duckdns/**
+pihole/**
+portainer/**
+unifi-controller/**
+
+.env
+
