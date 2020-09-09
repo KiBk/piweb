@@ -73,16 +73,40 @@ services:
         - ${PIWEB_PATH}/duckdns/config:/config #optional
         restart: unless-stopped
 
-    ouroboros: # Automatically update your containers
-        image: pyouroboros/ouroboros
-        container_name: ouroboros
+        #ouroboros: # Automatically update your containers
+        #image: pyouroboros/ouroboros
+        #container_name: ouroboros
+        #environment:
+        #- CLEANUP=true
+        #- INTERVAL=300
+        #- LOG_LEVEL=info
+        #- SELF_UPDATE=true
+        #- IGNORE=mongo influxdb postgres mariadb # Doesn't matter
+        #- TZ=Europe/Oslo
+        #volumes:
+        #- /var/run/docker.sock:/var/run/docker.sock
+        #restart: always
+
+    duplicati: # Backing up
+        image: linuxserver/duplicati
+        container_name: duplicati
         environment:
-        - CLEANUP=true
-        - INTERVAL=300
-        - LOG_LEVEL=info
-        - SELF_UPDATE=true
-        - IGNORE=mongo influxdb postgres mariadb # Doesn't matter
+        - PUID=1000
+        - PGID=1000
         - TZ=Europe/Oslo
+        # - CLI_ARGS= #optional
         volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-        restart: always
+        - ${PIWEB_PATH}/duplicati/config>:/config
+        - duplicati_data:/backups
+        - ${PIWEB_PATH}:/source
+        ports:
+        - 8200:8200
+        restart: unless-stopped
+
+
+volumes:
+    duplicati_data:
+        driver_opts:
+            type: "nfs4"
+            o: "addr=${NFS_IP},nolock,soft,rw"
+            device: ":/Backups/piweb"
