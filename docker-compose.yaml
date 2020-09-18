@@ -96,12 +96,24 @@ services:
         - TZ=Europe/Oslo
         # - CLI_ARGS= #optional
         volumes:
-        - ${PIWEB_PATH}/duplicati/config>:/config
+        - ${PIWEB_PATH}/duplicati/config:/config
         - duplicati_data:/backups
         - ${PIWEB_PATH}:/source
         ports:
         - 8200:8200
         restart: unless-stopped
+
+    homeassistant:
+        container_name: home-assistant
+        image: homeassistant/home-assistant:stable
+        volumes:
+        - ${PIWEB_PATH}/home-assistant/config:/config
+        environment:
+        - TZ=Europe/Oslo
+        restart: always
+        network_mode: host
+        # ports:
+        # - 8123:8123 # No need, because host
 
 
 volumes:
