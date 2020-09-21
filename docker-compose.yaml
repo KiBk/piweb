@@ -119,6 +119,6 @@ services:
 volumes:
     duplicati_data:
         driver_opts:
-            type: "nfs4"
-            o: "addr=${NFS_IP},nolock,soft,rw"
-            device: ":/Backups/piweb"
+            type: "nfs"
+            o: "addr=${NFS_IP_ZFS},nolock,soft,rw"
+            device: ":/mnt/TwoOldDrives/Backups-piweb"
